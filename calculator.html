@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculator</title>
+  <link rel="stylesheet" href="calculator.css">
+  <script src="script.js" defer></script>
+  <script type="module">
+    const firebaseConfig = {
+      apiKey: "AIzaSyCpqwy9By3CeM_U_zx2B_wj3s08n_r8_MU",
+      authDomain: "ios-calculator-vr46.firebaseapp.com",
+      projectId: "ios-calculator-vr46",
+      storageBucket: "ios-calculator-vr46.firebasestorage.app",
+      messagingSenderId: "613308798314",
+      appId: "1:613308798314:web:73f42022f40374e4a24113"
+    };
+
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+    import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
+
+    document.getElementById("sign-out").addEventListener("click", () => {
+      signOut(auth).then(() => {
+        window.location.href = "index.html"; 
+      }).catch((error) => {
+        console.error(error.message);
+      });
+    });
+
+    let currentInput = "";
+    let calculationHistory = [];
+
+    function appendToScreen(value) {
+      currentInput += value;
+      document.getElementById("screen").textContent = currentInput;
+    }
+
+    function clearScreen() {
+      currentInput = "";
+      document.getElementById("screen").textContent = "";
+    }
+
+    function calculate() {
+      try {
+        const result = eval(currentInput).toString();
+        addToHistory(`${currentInput} = ${result}`);
+        currentInput = result;
+        document.getElementById("screen").textContent = currentInput;
+      } catch {
+        document.getElementById("screen").textContent = "Error";
+      }
+    }
+
+    function addToHistory(calculation) {
+      calculationHistory.push(calculation);
+      updateHistoryUI();
+    }
+
+    function updateHistoryUI() {
+      const historyList = document.getElementById("history-list");
+      historyList.innerHTML = "";
+      calculationHistory.forEach((entry) => {
+        const li = document.createElement("li");
+        li.textContent = entry;
+        historyList.appendChild(li);
+      });
+    }
+
+    function clearHistory() {
+      calculationHistory = [];
+      updateHistoryUI();
+    }
+
+    const hamburger = document.getElementById("hamburger");
+    const sidebar = document.getElementById("sidebar");
+    const closeBtn = document.getElementById("close-btn");
+
+    hamburger.addEventListener("click", () => {
+      sidebar.style.left = "0";
+    });
+
+    closeBtn.addEventListener("click", () => {
+      sidebar.style.left = "-250px"; 
+    });
+
+    function showHistory() {
+      const historyContainer = document.getElementById("history-container");
+      historyContainer.style.display = "block";
+      updateHistoryUI();
+    }
+  </script>
+</head>
+<body>
+  <div class="hamburger" id="hamburger">&#9776;</div>
+
+  <div id="sidebar" class="sidebar">
+    <span id="close-btn" class="close-btn">&times;</span>
+    <ul>
+      <li><a href="#" onclick="showHistory()">History</a></li>
+      <li><a href="#" id="sign-out">Sign Out</a></li>
+    </ul>
+    <div id="history-container" class="history-container">
+      <h3>Calculation History</h3>
+      <ul id="history-list"></ul>
+      <button onclick="clearHistory()">Clear History</button>
+    </div>
+  </div>
+
+  <div class="calculator">
+    <div class="screen" id="screen"></div>
+    <div class="buttons">
+
+      <button class="btn clear" onclick="clearScreen()">AC</button>
+      <button class="btn clear" onclick="appendToScreen('+/-')">+/-</button>
+      <button class="btn clear" onclick="appendToScreen('%')">%</button>
+      <button class="btn operator" onclick="appendToScreen('/')">/</button>
+
+      <button class="btn" onclick="appendToScreen('7')">7</button>
+      <button class="btn" onclick="appendToScreen('8')">8</button>
+      <button class="btn" onclick="appendToScreen('9')">9</button>
+      <button class="btn operator" onclick="appendToScreen('*')">*</button>
+
+      <button class="btn" onclick="appendToScreen('4')">4</button>
+      <button class="btn" onclick="appendToScreen('5')">5</button>
+      <button class="btn" onclick="appendToScreen('6')">6</button>
+      <button class="btn operator" onclick="appendToScreen('-')">-</button>
+
+      <button class="btn" onclick="appendToScreen('1')">1</button>
+      <button class="btn" onclick="appendToScreen('2')">2</button>
+      <button class="btn" onclick="appendToScreen('3')">3</button>
+      <button class="btn operator" onclick="appendToScreen('+')">+</button>
+
+      <button class="btn" onclick="appendToScreen('')"><img src="https://help.apple.com/assets/66D88D586AB93C295801942E/66D88D5C6AB93C2958019440/en_US/9555d1077d17de8378ec8a0d53922dee.png" alt="the Calculator Mode button" height="30" width="22"></button>
+      <button class="btn" onclick="appendToScreen('0')">0</button>
+      <button class="btn" onclick="appendToScreen('.')">.</button>
+      <button class="btn operator" onclick="calculate()">=</button>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Page</title>
+
+  <script type="module">
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCpqwy9By3CeM_U_zx2B_wj3s08n_r8_MU",
+          authDomain: "ios-calculator-vr46.firebaseapp.com",
+          projectId: "ios-calculator-vr46",
+          storageBucket: "ios-calculator-vr46.firebasestorage.app",
+          messagingSenderId: "613308798314",
+          appId: "1:613308798314:web:73f42022f40374e4a24113"
+    };
+
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    document.getElementById("google-sign-in").addEventListener("click", () => {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider)
+        .then((result) => {
+
+          window.location.href = "calculator.html"; 
+        })
+        .catch((error) => {
+          console.error(error.message);
+          alert("Login failed: " + error.message);
+        });
+    });
+  </script>
+</head>
+<body>
+  <h1>Sign in to use the Calculator</h1>
+  <button id="google-sign-in">Sign in with Google</button>
+</body>
+</html>
