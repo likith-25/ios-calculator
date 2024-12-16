@@ -1,6 +1,19 @@
 let currentInput = "";
 let calculationHistory = [];
 
+
+function loadHistory() {
+  const savedHistory = localStorage.getItem("calculationHistory");
+  if (savedHistory) {
+    calculationHistory = JSON.parse(savedHistory);
+    updateHistoryUI();
+  }
+}
+
+function saveHistory() {
+  localStorage.setItem("calculationHistory", JSON.stringify(calculationHistory));
+}
+
 function appendToScreen(value) {
   currentInput += value;
   document.getElementById("screen").textContent = currentInput;
@@ -13,9 +26,9 @@ function clearScreen() {
 
 function calculate() {
   try {
-
     const result = eval(currentInput).toString();
 
+ 
     addToHistory(`${currentInput} = ${result}`);
 
     currentInput = result;
@@ -26,23 +39,57 @@ function calculate() {
 }
 
 function addToHistory(calculation) {
-  calculationHistory.push(calculation);
-  updateHistoryUI();
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      calculationHistory.push(calculation);
+      updateHistoryUI();
+      saveHistory(user.uid);
+    }
+  });
 }
 
 function updateHistoryUI() {
   const historyList = document.getElementById("history-list");
   historyList.innerHTML = "";
-  calculationHistory.forEach((entry) => {
+  calculationHistory.forEach((entry, index) => {
     const li = document.createElement("li");
     li.textContent = entry;
+
+ 
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
+    deleteButton.classList.add("delete-btn");
+    
+
+    deleteButton.addEventListener("click", () => {
+      deleteHistoryItem(index);
+    });
+
+  
+    li.appendChild(deleteButton);
     historyList.appendChild(li);
+  });
+}
+
+function deleteHistoryItem(index) {
+  calculationHistory.splice(index, 1); // Remove the item from the array
+  updateHistoryUI();
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      saveHistory(user.uid);  // Save the updated history to Firebase
+    }
   });
 }
 
 function clearHistory() {
   calculationHistory = [];
   updateHistoryUI();
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      saveHistory(user.uid);  // Save the cleared history to Firebase
+    }
+  });
 }
 
 function setupHistoryContainer() {
@@ -51,13 +98,15 @@ function setupHistoryContainer() {
   document.body.appendChild(historyContainer);
 }
 
-
 setupHistoryContainer();
 
-
-
-
-
+window.onload = () => {
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      loadHistory(user.uid); // Load history when the page loads
+    }
+  });
+};
 
 const hamburger = document.getElementById("hamburger");
 const sidebar = document.getElementById("sidebar");
@@ -70,7 +119,3 @@ hamburger.addEventListener("click", () => {
 closeBtn.addEventListener("click", () => {
   sidebar.style.left = "-250px"; 
 });
-
-
-
-

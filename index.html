@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login Page</title>
-
+  <title>iOS Calculator</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="images/png" href="images/icons8-calculator-48.png">
   <script type="module">
-
     const firebaseConfig = {
-        apiKey: "AIzaSyCpqwy9By3CeM_U_zx2B_wj3s08n_r8_MU",
-          authDomain: "ios-calculator-vr46.firebaseapp.com",
-          projectId: "ios-calculator-vr46",
-          storageBucket: "ios-calculator-vr46.firebasestorage.app",
-          messagingSenderId: "613308798314",
-          appId: "1:613308798314:web:73f42022f40374e4a24113"
+    apiKey: "AIzaSyCpqwy9By3CeM_U_zx2B_wj3s08n_r8_MU",
+    authDomain: "ios-calculator-vr46.firebaseapp.com",
+    projectId: "ios-calculator-vr46",
+    storageBucket: "ios-calculator-vr46.firebasestorage.app",
+    messagingSenderId: "613308798314",
+    appId: "1:613308798314:web:73f42022f40374e4a24113"
     };
 
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
@@ -37,7 +37,9 @@
   </script>
 </head>
 <body>
-  <h1>Sign in to use the Calculator</h1>
+  <div class="sign-in">
+    <h1>Sign in to use the Calculator</h1>
   <button id="google-sign-in">Sign in with Google</button>
+  </div>
 </body>
 </html>
