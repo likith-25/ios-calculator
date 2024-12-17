@@ -5,23 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>iOS Calculator</title>
   <link rel="stylesheet" href="calculator.css">
-  <link rel="icon" type="images/png" href="images/icons8-calculator-48.png">
+  <link rel="icon" type="image/png" href="images/icons8-calculator-48.png">
   <script src="script.js" defer></script>
   <script type="module">
     const firebaseConfig = {
       apiKey: "AIzaSyCpqwy9By3CeM_U_zx2B_wj3s08n_r8_MU",
       authDomain: "ios-calculator-vr46.firebaseapp.com",
       projectId: "ios-calculator-vr46",
-      storageBucket: "ios-calculator-vr46.firebasestorage.app",
+      storageBucket: "ios-calculator-vr46.appspot.com",
       messagingSenderId: "613308798314",
       appId: "1:613308798314:web:73f42022f40374e4a24113"
     };
 
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+    import { getFirestore, doc, setDoc, updateDoc, arrayUnion, getDoc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    async function saveHistoryToFirestore(calculation) {
+  const user = auth.currentUser;
+  if (user) {
+    const userHistoryRef = doc(db, "history", user.uid);
+
+    try {
+      await updateDoc(userHistoryRef, {
+        calculations: arrayUnion(calculation) // Adds the new calculation to the history
+      });
+    } catch (error) {
+      console.error("Error saving history: ", error);
+    }
+  } else {
+    console.error("No user signed in.");
+  }
+}
 
     onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -30,74 +49,12 @@
     });
 
     document.getElementById("sign-out").addEventListener("click", () => {
-      signOut(auth).then(() => {
-        window.location.href = "index.html"; 
-      }).catch((error) => {
-        console.error(error.message);
-      });
+      signOut(auth)
+        .then(() => window.location.href = "index.html")
+        .catch((error) => {
+          console.error("Sign-out error:", error.message);
+        });
     });
-
-    let currentInput = "";
-    let calculationHistory = [];
-
-    function appendToScreen(value) {
-      currentInput += value;
-      document.getElementById("screen").textContent = currentInput;
-    }
-
-    function clearScreen() {
-      currentInput = "";
-      document.getElementById("screen").textContent = "";
-    }
-
-    function calculate() {
-      try {
-        const result = eval(currentInput).toString();
-        addToHistory(`${currentInput} = ${result}`);
-        currentInput = result;
-        document.getElementById("screen").textContent = currentInput;
-      } catch {
-        document.getElementById("screen").textContent = "Error";
-      }
-    }
-
-    function addToHistory(calculation) {
-      calculationHistory.push(calculation);
-      updateHistoryUI();
-    }
-
-    function updateHistoryUI() {
-      const historyList = document.getElementById("history-list");
-      historyList.innerHTML = "";
-      calculationHistory.forEach((entry) => {
-        const li = document.createElement("li");
-        li.textContent = entry;
-        historyList.appendChild(li);
-      });
-    }
-
-    function clearHistory() {
-      calculationHistory = [];
-      updateHistoryUI();
-    }
-
-    const hamburger = document.getElementById("hamburger");
-    const sidebar = document.getElementById("sidebar");
-    const closeBtn = document.getElementById("close-btn");
-
-    hamburger.addEventListener("click", () => {
-      sidebar.style.left = "0";
-    });
-
-    closeBtn.addEventListener("click", () => {
-      sidebar.style.left = "-250px"; 
-    });
-
-    function showHistory() {
-      const historyContainer = document.getElementById("history-container");
-      historyContainer.style.display = "block";
-      updateHistoryUI();
-    }
   </script>
 </head>
 <body>
@@ -121,7 +78,7 @@
     <div class="buttons">
 
       <button class="btn clear" onclick="clearScreen()">AC</button>
-      <button class="btn clear" onclick="appendToScreen('+/-')">+/-</button>
+      <button class="btn clear" onclick="toggleSign()">+/-</button>
       <button class="btn clear" onclick="appendToScreen('%')">%</button>
       <button class="btn operator" onclick="appendToScreen('/')">/</button>
 
@@ -140,7 +97,7 @@
       <button class="btn" onclick="appendToScreen('3')">3</button>
       <button class="btn operator" onclick="appendToScreen('+')">+</button>
 
-      <button class="btn" onclick="appendToScreen('')"><img src="https://help.apple.com/assets/66D88D586AB93C295801942E/66D88D5C6AB93C2958019440/en_US/9555d1077d17de8378ec8a0d53922dee.png" alt="the Calculator Mode button" height="30" width="22"></button>
+      <button class="btn" onclick="clearScreen()">C</button>
       <button class="btn" onclick="appendToScreen('0')">0</button>
       <button class="btn" onclick="appendToScreen('.')">.</button>
       <button class="btn operator" onclick="calculate()">=</button>
