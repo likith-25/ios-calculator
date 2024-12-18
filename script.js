@@ -1,7 +1,7 @@
 let currentInput = "";
 let calculationHistory = [];
 
-// Load history from localStorage on page load
+
 function loadHistory() {
   const savedHistory = localStorage.getItem("calculationHistory");
   if (savedHistory) {
@@ -10,7 +10,7 @@ function loadHistory() {
   }
 }
 
-// Save history to localStorage
+
 function saveHistory() {
   localStorage.setItem("calculationHistory", JSON.stringify(calculationHistory));
 }
@@ -29,7 +29,6 @@ function calculate() {
   try {
     const result = eval(currentInput).toString();
 
-    // Add calculation to history and save it
     addToHistory(`${currentInput} = ${result}`);
 
     currentInput = result;
@@ -42,7 +41,7 @@ function calculate() {
 function addToHistory(calculation) {
   calculationHistory.push(calculation);
   updateHistoryUI();
-  saveHistory();  // Save the history to localStorage
+  saveHistory();
 }
 
 function updateHistoryUI() {
@@ -52,32 +51,32 @@ function updateHistoryUI() {
     const li = document.createElement("li");
     li.textContent = entry;
 
-    // Create delete button
+    
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "Delete";
     deleteButton.classList.add("delete-btn");
 
-    // Add delete functionality
+    
     deleteButton.addEventListener("click", () => {
       deleteHistoryItem(index);
     });
 
-    // Append delete button to list item
+    
     li.appendChild(deleteButton);
     historyList.appendChild(li);
   });
 }
 
 function deleteHistoryItem(index) {
-  calculationHistory.splice(index, 1);  // Remove the item from the array
+  calculationHistory.splice(index, 1);
   updateHistoryUI();
-  saveHistory();  // Save the updated history to localStorage
+  saveHistory();
 }
 
 function clearHistory() {
   calculationHistory = [];
   updateHistoryUI();
-  saveHistory();  // Save the cleared history to localStorage
+  saveHistory();
 }
 
 function setupHistoryContainer() {
@@ -90,7 +89,7 @@ setupHistoryContainer();
 
 window.onload = loadHistory;
 
-// Hamburger menu functionality
+
 const hamburger = document.getElementById("hamburger");
 const sidebar = document.getElementById("sidebar");
 const closeBtn = document.getElementById("close-btn");
