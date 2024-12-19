@@ -7,15 +7,12 @@
   <title>iOS Calculator</title>
   <link rel="stylesheet" href="calculator.css">
   <link rel="icon" type="image/png" href="images/icons8-calculator-48.png">
-  <script src="script.js" defer></script>
   <script type="module">
-
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-    import { getDatabase, ref, set, push, get, child } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js'; // Realtime Database methods
+    import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
 
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCpqwy9By3CeM_U_zx2B_wj3s08n_r8_MU",
       authDomain: "ios-calculator-vr46.firebaseapp.com",
@@ -23,137 +20,192 @@
       storageBucket: "ios-calculator-vr46.appspot.com",
       messagingSenderId: "613308798314",
       appId: "1:613308798314:web:73f42022f40374e4a24113",
-      databaseURL: "https://ios-calculator-vr46-default-rtdb.firebaseio.com/" // Realtime Database URL
     };
 
-    
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getDatabase(app); // Initialize Realtime Database
+    const db = getFirestore(app);
 
-    const user = auth.currentUser;
-    
-    
+    let currentInput = "";
 
-    
 
-    document.addEventListener("DOMContentLoaded", () => {
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const db = getDatabase(app);
+    window.appendToScreen = function (value) {
+      currentInput += value;
+      document.getElementById("screen").textContent = currentInput;
+    };
 
-      // Handle sign-out
-      document.getElementById("sign-out").addEventListener("click", () => {
-        signOut(auth)
-          .then(() => {
-            console.log("Sign-out successful.");
-            window.location.href = "index.html";
-          })
-          .catch((error) => console.error("Sign-out error:", error.message));
-      });
 
-      // Handle authentication state changes
-      onAuthStateChanged(auth, (user) => {
-        if (!user) {
-          console.log("No user signed in. Redirecting to index.html...");
-          window.location.href = "index.html";
-        } else {
-          console.log("User is signed in:", user.email, user.displayName);
-          document.getElementById("display-name").textContent="Hi, " + user.displayName;
-          loadHistory(); // Load user history
-        }
-      });
-
-      // Save history function
-      async function saveHistoryToRealtimeDatabase(calculation) {
-        const user = auth.currentUser;
-        if (user) {
-          const userHistoryRef = ref(db, 'history/' + user.uid);
-          const newHistoryRef = push(userHistoryRef);
-          try {
-            await set(newHistoryRef, {
-              calculation: calculation,
-              timestamp: new Date().toISOString()
-            });
-            console.log("History saved successfully!");
-          } catch (error) {
-            console.error("Error saving history:", error);
-          }
-        } else {
-          console.error("No user signed in.");
-        }
-      }
-
-      // Load history function
-      async function loadHistory() {
-        const user = auth.currentUser;
-        if (user) {
-          const userHistoryRef = ref(db, 'history/' + user.uid);
-          try {
-            const snapshot = await get(userHistoryRef);
-            if (snapshot.exists()) {
-              const history = Object.values(snapshot.val());
-              updateHistoryUI(history);
-            } else {
-              console.log("No history found.");
-            }
-          } catch (error) {
-            console.error("Error loading history:", error);
-          }
-        } else {
-          console.error("No user signed in.");
-        }
-      }
-
-      // Update history UI
-      function updateHistoryUI(history) {
-        const historyList = document.getElementById("history-list");
-        historyList.innerHTML = "";
-        history.forEach(entry => {
-          const li = document.createElement("li");
-          const timestamp = new Date(entry.timestamp);
-          const formattedTimestamp = timestamp.toLocaleString();
-          li.textContent = `${entry.calculation} (calculated on: ${formattedTimestamp})`;
-          historyList.appendChild(li);
-        });
-      }
-    });
-
-    // Clear user's history
-    function clearHistory() {
-      const user = auth.currentUser;
-      if (user) {
-        const userHistoryRef = ref(db, 'history/' + user.uid);
-        set(userHistoryRef, null); // Clear history in database
-        updateHistoryUI([]); // Update UI to show no history
-      }
-    }
-
-    // Calculator Logic
-    let screenContent = "";
-
-    function appendToScreen(value) {
-      screenContent += value;
-      document.getElementById("screen").textContent = screenContent;
-    }
-
-    function clearScreen() {
-      screenContent = "";
+    window.clearScreen = function () {
+      currentInput = "";
       document.getElementById("screen").textContent = "";
-    }
+    };
 
-    function calculate() {
+
+    window.toggleSign = function () {
+      if (currentInput) {
+        if (currentInput[0] === '-') {
+          currentInput = currentInput.slice(1);
+        } else {
+          currentInput = '-' + currentInput;
+        }
+        document.getElementById("screen").textContent = currentInput;
+      }
+    };
+
+
+    window.calculate = function () {
       try {
-        const result = eval(screenContent); // Unsafe eval, consider safer approach
+        const result = eval(currentInput);
         document.getElementById("screen").textContent = result;
-        saveHistoryToRealtimeDatabase(screenContent + " = " + result); // Save result to Firebase
-        screenContent = ""; // Clear screen after calculation
+        saveHistoryToFirestore(currentInput + " = " + result);
+        currentInput = "";
       } catch (e) {
         document.getElementById("screen").textContent = "Error";
       }
+    };
+
+
+    async function saveHistoryToFirestore(calculation) {
+      const user = auth.currentUser;
+      if (user) {
+        try {
+
+          await addDoc(collection(db, 'Users', user.uid, 'History'), {
+            calculation: calculation,
+            timestamp: new Date().toISOString(),
+          });
+          console.log("Calculation saved to Firestore!");
+          loadHistoryFromFirestore();
+        } catch (error) {
+          console.error("Error saving history to Firestore:", error);
+        }
+      } else {
+        console.error("No user signed in.");
+      }
     }
+
+
+    async function loadHistoryFromFirestore() {
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          const querySnapshot = await getDocs(collection(db, 'Users', user.uid, 'History'));
+          const history = [];
+          querySnapshot.forEach(doc => {
+            const data = doc.data();
+            history.push({ ...data, id: doc.id });
+          });
+          updateHistoryUI(history);
+        } catch (error) {
+          console.error("Error loading history from Firestore:", error);
+        }
+      } else {
+        console.error("No user signed in.");
+      }
+    }
+
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        console.log("No user signed in. Redirecting to index.html...");
+        window.location.href = "index.html";
+      } else {
+        console.log("User is signed in:", user.email, user.displayName);
+        document.getElementById("display-name").textContent = "Hi, " + user.displayName;
+        loadHistoryFromFirestore();
+      }
+    });
+
+
+    document.getElementById("sign-out").addEventListener("click", () => {
+      signOut(auth)
+        .then(() => {
+          console.log("Sign-out successful.");
+          window.location.href = "index.html";
+        })
+        .catch((error) => console.error("Sign-out error:", error.message));
+    });
+
+
+    function updateHistoryUI(history) {
+      const historyList = document.getElementById("history-list");
+      historyList.innerHTML = "";
+      history.forEach(entry => {
+        const li = document.createElement("li");
+        const timestamp = new Date(entry.timestamp);
+        const formattedTimestamp = timestamp.toLocaleString();
+        li.textContent = `${entry.calculation} (calculated on: ${formattedTimestamp})`;
+
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "Delete";
+        deleteButton.classList.add("delete-btn");
+
+        deleteButton.addEventListener("click", () => {
+          deleteHistoryItemFromFirestore(entry.id);
+        });
+
+        li.appendChild(deleteButton);
+        historyList.appendChild(li);
+      });
+    }
+
+
+
+    async function deleteHistoryItemFromFirestore(historyId) {
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          await deleteDoc(doc(db, 'Users', user.uid, 'History', historyId));
+          console.log("History item deleted from Firestore!");
+          loadHistoryFromFirestore();
+        } catch (error) {
+          console.error("Error deleting history item:", error);
+        }
+      } else {
+        console.error("No user signed in.");
+      }
+    }
+
+    window.clearHistory = async function () {
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          // Reference to user's history collection
+          const historyRef = collection(db, 'Users', user.uid, 'History');
+
+          // Retrieve all history documents
+          const querySnapshot = await getDocs(historyRef);
+          console.log("Query snapshot size:", querySnapshot.size);
+
+          // Extract document IDs
+          const historyIds = querySnapshot.docs.map(docSnapshot => docSnapshot.id);
+          // console.log("History IDs:", historyIds);
+
+          if (historyIds.length === 0) {
+            console.log("No history items to delete.");
+            return;
+          }
+
+          // Batch delete all history documents
+          const batch = writeBatch(db);
+          historyIds.forEach((historyId) => {
+            const docRef = doc(db, 'Users', user.uid, 'History', historyId);
+            console.log("Deleting docRef:", docRef.path);
+            batch.delete(docRef);
+          });
+
+          await batch.commit();
+          console.log("Batch commit successful!");
+          loadHistoryFromFirestore();
+        } catch (error) {
+          console.error("Error clearing history:", error);
+        }
+      } else {
+        console.error("No user signed in.");
+      }
+    };
   </script>
+  <script src="script.js" defer></script>
 </head>
 
 <body>
@@ -162,7 +214,6 @@
     <span id="close-btn" class="close-btn">&times;</span>
     <ul>
       <li id="display-name"></li>
-      <li><a href="#" onclick="showHistory()">History</a></li>
       <li><a href="#" id="sign-out">Sign Out</a></li>
     </ul>
     <div id="history-container" class="history-container">
@@ -173,9 +224,9 @@
   </div>
 
   <div class="calculator">
-    <div class="screen" id="screen"></div>
+    <div class="screen" id="screen">0</div>
     <div class="buttons">
-      <!-- Calculator Buttons -->
+
       <button class="btn clear" onclick="clearScreen()">AC</button>
       <button class="btn clear" onclick="toggleSign()">+/-</button>
       <button class="btn clear" onclick="appendToScreen('%')">%</button>
@@ -192,7 +243,9 @@
       <button class="btn" onclick="appendToScreen('2')">2</button>
       <button class="btn" onclick="appendToScreen('3')">3</button>
       <button class="btn operator" onclick="appendToScreen('+')">+</button>
-      <button class="btn" onclick="clearScreen()">C</button>
+      <button class="btn" onclick="appendToScreen('')"><img
+          src="https://help.apple.com/assets/66D88D586AB93C295801942E/66D88D5C6AB93C2958019440/en_US/9555d1077d17de8378ec8a0d53922dee.png"
+          alt="the Calculator Mode button" height="30" width="22"></button>
       <button class="btn" onclick="appendToScreen('0')">0</button>
       <button class="btn" onclick="appendToScreen('.')">.</button>
       <button class="btn operator" onclick="calculate()">=</button>

@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="images/png" href="images/icons8-calculator-48.png">
   <script type="module">
-    // Firebase Configuration
+
     const firebaseConfig = {
       apiKey: "AIzaSyCpqwy9By3CeM_U_zx2B_wj3s08n_r8_MU",
       authDomain: "ios-calculator-vr46.firebaseapp.com",
@@ -18,20 +18,20 @@
       appId: "1:613308798314:web:73f42022f40374e4a24113",
     };
 
-    // Import necessary Firebase modules
+
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 
-    // Initialize Firebase
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // Handle Google Sign-In
+
     document.getElementById("google-sign-in").addEventListener("click", () => {
       const provider = new GoogleAuthProvider();
       signInWithPopup(auth, provider)
         .then((result) => {
-          // Redirect to the calculator page after successful login
+
           window.location.href = "calculator.html";
         })
         .catch((error) => {
